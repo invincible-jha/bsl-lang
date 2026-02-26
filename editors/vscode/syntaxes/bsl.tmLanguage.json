@@ -1,0 +1,161 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "BSL",
+  "scopeName": "source.bsl",
+  "fileTypes": ["bsl"],
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#agent-declaration" },
+    { "include": "#behavior-declaration" },
+    { "include": "#invariant-declaration" },
+    { "include": "#keywords-declaration" },
+    { "include": "#keywords-modality" },
+    { "include": "#keywords-clause" },
+    { "include": "#keywords-metadata" },
+    { "include": "#keywords-operator" },
+    { "include": "#literals-string" },
+    { "include": "#literals-number" },
+    { "include": "#literals-bool" },
+    { "include": "#operators-comparison" },
+    { "include": "#punctuation" },
+    { "include": "#identifiers" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.bsl",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.bsl",
+          "begin": "/\\*",
+          "end": "\\*/",
+          "captures": {
+            "0": { "name": "punctuation.definition.comment.bsl" }
+          }
+        }
+      ]
+    },
+    "agent-declaration": {
+      "match": "\\b(agent)\\s+([A-Za-z_][A-Za-z0-9_]*)\\b",
+      "captures": {
+        "1": { "name": "keyword.declaration.agent.bsl" },
+        "2": { "name": "entity.name.type.agent.bsl" }
+      }
+    },
+    "behavior-declaration": {
+      "match": "\\b(behavior)\\s+([A-Za-z_][A-Za-z0-9_]*)\\b",
+      "captures": {
+        "1": { "name": "keyword.declaration.behavior.bsl" },
+        "2": { "name": "entity.name.function.behavior.bsl" }
+      }
+    },
+    "invariant-declaration": {
+      "match": "\\b(invariant)\\s+([A-Za-z_][A-Za-z0-9_]*)\\b",
+      "captures": {
+        "1": { "name": "keyword.declaration.invariant.bsl" },
+        "2": { "name": "entity.name.class.invariant.bsl" }
+      }
+    },
+    "keywords-declaration": {
+      "name": "keyword.control.declaration.bsl",
+      "match": "\\b(agent|behavior|invariant)\\b"
+    },
+    "keywords-modality": {
+      "name": "keyword.operator.modality.bsl",
+      "match": "\\b(must_not|must|should|may)\\b"
+    },
+    "keywords-clause": {
+      "name": "keyword.control.clause.bsl",
+      "match": "\\b(when|degrades_to|delegates_to|receives|escalate_to_human|applies_to|all_behaviors|cases|of|in)\\b"
+    },
+    "keywords-metadata": {
+      "name": "keyword.other.metadata.bsl",
+      "match": "\\b(version|model|owner|confidence|latency|cost|audit|severity)\\b"
+    },
+    "keywords-operator": {
+      "name": "keyword.operator.logical.bsl",
+      "match": "\\b(and|or|not|before|after|contains)\\b"
+    },
+    "keywords-severity": {
+      "name": "constant.language.severity.bsl",
+      "match": "\\b(critical|high|medium|low|none|basic|full_trace)\\b"
+    },
+    "literals-string": {
+      "name": "string.quoted.double.bsl",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.bsl",
+          "match": "\\\\(n|t|r|\\\\|\"|')"
+        }
+      ]
+    },
+    "literals-number": {
+      "name": "constant.numeric.bsl",
+      "match": "\\b[0-9]+(?:\\.[0-9]+)?\\b"
+    },
+    "literals-bool": {
+      "name": "constant.language.boolean.bsl",
+      "match": "\\b(true|false)\\b"
+    },
+    "operators-comparison": {
+      "name": "keyword.operator.comparison.bsl",
+      "match": "(==|!=|<=|>=|<|>)"
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.section.block.begin.bsl",
+          "match": "\\{"
+        },
+        {
+          "name": "punctuation.section.block.end.bsl",
+          "match": "\\}"
+        },
+        {
+          "name": "punctuation.definition.list.begin.bsl",
+          "match": "\\["
+        },
+        {
+          "name": "punctuation.definition.list.end.bsl",
+          "match": "\\]"
+        },
+        {
+          "name": "punctuation.separator.colon.bsl",
+          "match": ":"
+        },
+        {
+          "name": "punctuation.separator.comma.bsl",
+          "match": ","
+        },
+        {
+          "name": "punctuation.accessor.dot.bsl",
+          "match": "\\."
+        },
+        {
+          "name": "keyword.operator.percentage.bsl",
+          "match": "%"
+        }
+      ]
+    },
+    "identifiers": {
+      "patterns": [
+        {
+          "name": "variable.other.member.bsl",
+          "match": "\\b[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)+\\b"
+        },
+        {
+          "name": "variable.other.bsl",
+          "match": "\\b[a-z_][a-z0-9_]*\\b"
+        },
+        {
+          "name": "entity.name.type.bsl",
+          "match": "\\b[A-Z][A-Za-z0-9_]*\\b"
+        }
+      ]
+    }
+  }
+}

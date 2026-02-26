@@ -1,0 +1,129 @@
+{
+  "name": "bsl-lang",
+  "displayName": "BSL — Behavioral Specification Language",
+  "description": "Syntax highlighting, bracket matching, and language support for .bsl files",
+  "version": "0.1.0",
+  "publisher": "aumos-ai",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aumos-ai/bsl-lang"
+  },
+  "bugs": {
+    "url": "https://github.com/aumos-ai/bsl-lang/issues"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Formatters"
+  ],
+  "keywords": [
+    "bsl",
+    "behavioral specification",
+    "agent",
+    "ai",
+    "llm"
+  ],
+  "icon": "icons/bsl-logo.png",
+  "contributes": {
+    "languages": [
+      {
+        "id": "bsl",
+        "aliases": [
+          "Behavioral Specification Language",
+          "BSL"
+        ],
+        "extensions": [
+          ".bsl"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "bsl",
+        "scopeName": "source.bsl",
+        "path": "./syntaxes/bsl.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "bsl",
+        "path": "./snippets/bsl.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "bsl.validate",
+        "title": "BSL: Validate File",
+        "icon": "$(check)"
+      },
+      {
+        "command": "bsl.format",
+        "title": "BSL: Format File",
+        "icon": "$(symbol-color)"
+      },
+      {
+        "command": "bsl.showSchema",
+        "title": "BSL: Export JSON Schema",
+        "icon": "$(json)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "when": "resourceExtname == .bsl",
+          "command": "bsl.validate",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "BSL Language",
+      "properties": {
+        "bsl.executablePath": {
+          "type": "string",
+          "default": "bsl-lang",
+          "description": "Path to the bsl-lang executable"
+        },
+        "bsl.validateOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Validate BSL files on save"
+        },
+        "bsl.formatOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Format BSL files on save"
+        },
+        "bsl.strict": {
+          "type": "boolean",
+          "default": false,
+          "description": "Treat validation warnings as errors"
+        },
+        "bsl.lintOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run lint rules on save"
+        }
+      }
+    }
+  },
+  "activationEvents": [
+    "onLanguage:bsl"
+  ],
+  "main": "./out/extension.js",
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0"
+  }
+}
