@@ -32,7 +32,6 @@ Usage
 from __future__ import annotations
 
 import json
-from typing import Any
 
 from bsl.ast.nodes import (
     AgentSpec,
@@ -56,7 +55,7 @@ from bsl.ast.nodes import (
     UnaryOpExpr,
 )
 
-Schema = dict[str, Any]
+Schema = dict[str, object]
 
 
 def _expr_to_description(expr: Expression) -> str:

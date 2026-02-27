@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Union
+from typing import Union
 
 from bsl.ast.nodes import (
     AgentSpec,
@@ -32,6 +32,7 @@ from bsl.ast.nodes import (
     Constraint,
     Degradation,
     Delegates,
+    Expression,
     Invariant,
     Receives,
     Severity,
@@ -297,7 +298,7 @@ BslChange = Union[
 # ---------------------------------------------------------------------------
 
 
-def _expr_str(expr: Any) -> str:
+def _expr_str(expr: Expression | None) -> str:
     """Return a compact string representation of any expression node."""
     from bsl.ast.nodes import (
         AfterExpr,
@@ -486,8 +487,8 @@ class BslDiff:
         self,
         behavior_name: str,
         constraint_type: str,
-        old_list: tuple[Any, ...],
-        new_list: tuple[Any, ...],
+        old_list: tuple[Constraint | ShouldConstraint, ...],
+        new_list: tuple[Constraint | ShouldConstraint, ...],
     ) -> list[BslChange]:
         changes: list[BslChange] = []
         old_exprs = [_expr_str(c.expression) for c in old_list]

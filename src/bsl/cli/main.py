@@ -24,9 +24,12 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING
 
 import click
+
+if TYPE_CHECKING:
+    from bsl.ast.nodes import AgentSpec
 from rich.console import Console
 from rich.panel import Panel
 from rich.syntax import Syntax
@@ -49,7 +52,7 @@ def _read_source(path: str) -> str:
         sys.exit(1)
 
 
-def _parse_or_exit(source: str, path: str) -> Any:
+def _parse_or_exit(source: str, path: str) -> "AgentSpec":
     """Parse BSL source, printing errors and exiting on failure."""
     from bsl.lexer import LexError
     from bsl.parser import ParseErrorCollection, parse
@@ -423,10 +426,12 @@ def translate_command(text: str, provider_name: str, reverse: bool) -> None:
         )
         provider = TemplateProvider()
 
+    from bsl.translate.providers import TranslationProvider
+
     if reverse:
         from bsl.translate.bsl_to_nl import BSLToNLTranslator
 
-        translator: Any = BSLToNLTranslator(provider=provider)
+        translator: TranslationProvider = BSLToNLTranslator(provider=provider)
     else:
         from bsl.translate.nl_to_bsl import NLToBSLTranslator
 
@@ -439,6 +444,75 @@ def translate_command(text: str, provider_name: str, reverse: bool) -> None:
         sys.exit(1)
 
     console.print(result)
+
+
+# ---------------------------------------------------------------------------
+# compile command
+# ---------------------------------------------------------------------------
+
+
+@cli.command(name="compile")
+@click.argument("file", type=click.Path(exists=False))
+@click.option(
+    "--target",
+    "-t",
+    type=click.Choice(["pytest"], case_sensitive=False),
+    default="pytest",
+    help="Compilation target (default: pytest).",
+)
+@click.option(
+    "--output",
+    "-o",
+    default=None,
+    help="Output directory for generated files (default: current directory).",
+)
+def compile_command(file: str, target: str, output: str | None) -> None:
+    """Compile a BSL file into executable test code.
+
+    FILE is the path to the .bsl file to compile.
+
+    Examples:
+
+    \b
+        bsl-lang compile spec.bsl --target pytest
+        bsl-lang compile spec.bsl --target pytest --output tests/generated/
+    """
+    from bsl.compiler import compile as bsl_compile, available_targets
+
+    source = _read_source(file)
+    spec = _parse_or_exit(source, file)
+
+    if target not in available_targets():
+        err_console.print(
+            f"[red]Error:[/red] Unknown target {target!r}. "
+            f"Available: {', '.join(available_targets())}"
+        )
+        sys.exit(1)
+
+    try:
+        compiler_output = bsl_compile(spec, target=target)
+    except Exception as exc:  # noqa: BLE001
+        err_console.print(f"[red]Compilation error:[/red] {exc}")
+        sys.exit(1)
+
+    output_dir = Path(output) if output else Path.cwd()
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    for filename, content in compiler_output.files.items():
+        dest = output_dir / filename
+        dest.write_text(content, encoding="utf-8")
+        console.print(f"[green]Written:[/green] {dest}")
+
+    for warning in compiler_output.warnings:
+        err_console.print(f"[yellow]Warning:[/yellow] {warning}")
+
+    invariant_count = compiler_output.metadata.get("invariant_count", 0)
+    behavior_count = compiler_output.metadata.get("behavior_count", 0)
+    console.print(
+        f"\n[bold]Generated[/bold] {compiler_output.test_count} test case(s) "
+        f"from {invariant_count} invariant(s), {behavior_count} behavior(s) "
+        f"[dim]→ target: {target}[/dim]"
+    )
 
 
 if __name__ == "__main__":

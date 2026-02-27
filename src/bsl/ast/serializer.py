@@ -19,7 +19,6 @@ Usage
 from __future__ import annotations
 
 import json
-from typing import Any
 
 import yaml
 
@@ -69,7 +68,7 @@ class AstSerializer:
     # Serialization (AST → dict)
     # ------------------------------------------------------------------
 
-    def to_dict(self, spec: AgentSpec) -> dict[str, Any]:
+    def to_dict(self, spec: AgentSpec) -> dict[str, object]:
         """Serialize an ``AgentSpec`` to a JSON-compatible dict."""
         return {
             "kind": "AgentSpec",
@@ -87,7 +86,7 @@ class AstSerializer:
     def _span_to_dict(self, span: Span) -> dict[str, int]:
         return {"start": span.start, "end": span.end, "line": span.line, "col": span.col}
 
-    def _threshold_to_dict(self, t: ThresholdClause) -> dict[str, Any]:
+    def _threshold_to_dict(self, t: ThresholdClause) -> dict[str, object]:
         return {
             "operator": t.operator,
             "value": t.value,
@@ -95,26 +94,26 @@ class AstSerializer:
             "span": self._span_to_dict(t.span),
         }
 
-    def _escalation_to_dict(self, e: EscalationClause) -> dict[str, Any]:
+    def _escalation_to_dict(self, e: EscalationClause) -> dict[str, object]:
         return {
             "condition": self._expr_to_dict(e.condition),
             "span": self._span_to_dict(e.span),
         }
 
-    def _constraint_to_dict(self, c: Constraint) -> dict[str, Any]:
+    def _constraint_to_dict(self, c: Constraint) -> dict[str, object]:
         return {
             "expression": self._expr_to_dict(c.expression),
             "span": self._span_to_dict(c.span),
         }
 
-    def _should_to_dict(self, c: ShouldConstraint) -> dict[str, Any]:
+    def _should_to_dict(self, c: ShouldConstraint) -> dict[str, object]:
         return {
             "expression": self._expr_to_dict(c.expression),
             "percentage": c.percentage,
             "span": self._span_to_dict(c.span),
         }
 
-    def _behavior_to_dict(self, b: Behavior) -> dict[str, Any]:
+    def _behavior_to_dict(self, b: Behavior) -> dict[str, object]:
         return {
             "kind": "Behavior",
             "name": b.name,
@@ -133,7 +132,7 @@ class AstSerializer:
             "span": self._span_to_dict(b.span),
         }
 
-    def _invariant_to_dict(self, i: Invariant) -> dict[str, Any]:
+    def _invariant_to_dict(self, i: Invariant) -> dict[str, object]:
         return {
             "kind": "Invariant",
             "name": i.name,
@@ -145,7 +144,7 @@ class AstSerializer:
             "span": self._span_to_dict(i.span),
         }
 
-    def _degradation_to_dict(self, d: Degradation) -> dict[str, Any]:
+    def _degradation_to_dict(self, d: Degradation) -> dict[str, object]:
         return {
             "kind": "Degradation",
             "fallback": d.fallback,
@@ -153,14 +152,14 @@ class AstSerializer:
             "span": self._span_to_dict(d.span),
         }
 
-    def _composition_to_dict(self, c: Composition) -> dict[str, Any]:
+    def _composition_to_dict(self, c: Composition) -> dict[str, object]:
         if isinstance(c, Receives):
             return {"kind": "Receives", "source_agent": c.source_agent, "span": self._span_to_dict(c.span)}
         if isinstance(c, Delegates):
             return {"kind": "Delegates", "target_agent": c.target_agent, "span": self._span_to_dict(c.span)}
         raise TypeError(f"Unknown composition type: {type(c)}")
 
-    def _expr_to_dict(self, expr: Expression) -> dict[str, Any]:
+    def _expr_to_dict(self, expr: Expression) -> dict[str, object]:
         if isinstance(expr, Identifier):
             return {"kind": "Identifier", "name": expr.name, "span": self._span_to_dict(expr.span)}
         if isinstance(expr, DotAccess):
@@ -227,7 +226,7 @@ class AstSerializer:
     # Deserialization (dict → AST)
     # ------------------------------------------------------------------
 
-    def from_dict(self, data: dict[str, Any]) -> AgentSpec:
+    def from_dict(self, data: dict[str, object]) -> AgentSpec:
         """Deserialize an ``AgentSpec`` from a plain dict."""
         return AgentSpec(
             name=data["name"],
@@ -248,7 +247,7 @@ class AstSerializer:
     def _span_from_dict(self, d: dict[str, int]) -> Span:
         return Span(start=d["start"], end=d["end"], line=d["line"], col=d["col"])
 
-    def _threshold_from_dict(self, d: dict[str, Any]) -> ThresholdClause:
+    def _threshold_from_dict(self, d: dict[str, object]) -> ThresholdClause:
         return ThresholdClause(
             operator=d["operator"],
             value=float(d["value"]),
@@ -256,26 +255,26 @@ class AstSerializer:
             span=self._span_from_dict(d["span"]),
         )
 
-    def _escalation_from_dict(self, d: dict[str, Any]) -> EscalationClause:
+    def _escalation_from_dict(self, d: dict[str, object]) -> EscalationClause:
         return EscalationClause(
             condition=self._expr_from_dict(d["condition"]),
             span=self._span_from_dict(d["span"]),
         )
 
-    def _constraint_from_dict(self, d: dict[str, Any]) -> Constraint:
+    def _constraint_from_dict(self, d: dict[str, object]) -> Constraint:
         return Constraint(
             expression=self._expr_from_dict(d["expression"]),
             span=self._span_from_dict(d["span"]),
         )
 
-    def _should_from_dict(self, d: dict[str, Any]) -> ShouldConstraint:
+    def _should_from_dict(self, d: dict[str, object]) -> ShouldConstraint:
         return ShouldConstraint(
             expression=self._expr_from_dict(d["expression"]),
             percentage=d.get("percentage"),
             span=self._span_from_dict(d["span"]),
         )
 
-    def _behavior_from_dict(self, d: dict[str, Any]) -> Behavior:
+    def _behavior_from_dict(self, d: dict[str, object]) -> Behavior:
         return Behavior(
             name=d["name"],
             when_clause=self._expr_from_dict(d["when_clause"]) if d.get("when_clause") else None,
@@ -295,7 +294,7 @@ class AstSerializer:
             span=self._span_from_dict(d["span"]),
         )
 
-    def _invariant_from_dict(self, d: dict[str, Any]) -> Invariant:
+    def _invariant_from_dict(self, d: dict[str, object]) -> Invariant:
         return Invariant(
             name=d["name"],
             constraints=tuple(self._constraint_from_dict(c) for c in d.get("constraints", [])),
@@ -306,14 +305,14 @@ class AstSerializer:
             span=self._span_from_dict(d["span"]),
         )
 
-    def _degradation_from_dict(self, d: dict[str, Any]) -> Degradation:
+    def _degradation_from_dict(self, d: dict[str, object]) -> Degradation:
         return Degradation(
             fallback=d["fallback"],
             condition=self._expr_from_dict(d["condition"]),
             span=self._span_from_dict(d["span"]),
         )
 
-    def _composition_from_dict(self, d: dict[str, Any]) -> Composition:
+    def _composition_from_dict(self, d: dict[str, object]) -> Composition:
         kind = d["kind"]
         if kind == "Receives":
             return Receives(source_agent=d["source_agent"], span=self._span_from_dict(d["span"]))
@@ -321,7 +320,7 @@ class AstSerializer:
             return Delegates(target_agent=d["target_agent"], span=self._span_from_dict(d["span"]))
         raise ValueError(f"Unknown composition kind: {kind!r}")
 
-    def _expr_from_dict(self, d: dict[str, Any]) -> Expression:
+    def _expr_from_dict(self, d: dict[str, object]) -> Expression:
         kind = d["kind"]
         span = self._span_from_dict(d["span"])
         if kind == "Identifier":
@@ -389,7 +388,7 @@ class AstSerializer:
 
     def from_json(self, text: str) -> AgentSpec:
         """Deserialize an ``AgentSpec`` from a JSON string."""
-        data: dict[str, Any] = json.loads(text)
+        data: dict[str, object] = json.loads(text)
         return self.from_dict(data)
 
     # ------------------------------------------------------------------
@@ -402,5 +401,5 @@ class AstSerializer:
 
     def from_yaml(self, text: str) -> AgentSpec:
         """Deserialize an ``AgentSpec`` from a YAML string."""
-        data: dict[str, Any] = yaml.safe_load(text)
+        data: dict[str, object] = yaml.safe_load(text)
         return self.from_dict(data)

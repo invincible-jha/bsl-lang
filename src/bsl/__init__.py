@@ -46,12 +46,13 @@ Example
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 __version__: str = "0.1.0"
 
 if TYPE_CHECKING:
     from bsl.ast.nodes import AgentSpec
+    from bsl.compiler.base import CompilerOutput
     from bsl.diff.diff import BslChange
     from bsl.validator.diagnostics import Diagnostic
 
@@ -161,7 +162,7 @@ def lint(spec: "AgentSpec", include_hints: bool = True) -> list["Diagnostic"]:
     return _lint(spec, include_hints=include_hints)
 
 
-def export_schema(spec: "AgentSpec") -> dict[str, Any]:
+def export_schema(spec: "AgentSpec") -> dict[str, object]:
     """Export an ``AgentSpec`` as a JSON Schema dict.
 
     Parameters
@@ -171,13 +172,43 @@ def export_schema(spec: "AgentSpec") -> dict[str, Any]:
 
     Returns
     -------
-    dict[str, Any]
+    dict[str, object]
         A JSON Schema (draft 2020-12) document.
     """
     from bsl.schema.json_schema import export_schema as _export_schema
 
     return _export_schema(spec)
 
+
+def compile(  # noqa: A001
+    spec: "AgentSpec",
+    target: str = "pytest",
+) -> "CompilerOutput":
+    """Compile a parsed BSL ``AgentSpec`` into executable test code.
+
+    Parameters
+    ----------
+    spec:
+        A parsed and validated ``AgentSpec`` AST.
+    target:
+        The compilation target.  Currently only ``"pytest"`` is supported.
+
+    Returns
+    -------
+    CompilerOutput
+        A mapping of filename → generated Python source, plus metadata.
+
+    Raises
+    ------
+    ValueError
+        If ``target`` is not a registered compiler target.
+    """
+    from bsl.compiler import compile as _compile
+
+    return _compile(spec, target=target)
+
+
+from bsl.convenience import BslSpec
 
 __all__ = [
     "__version__",
@@ -187,4 +218,6 @@ __all__ = [
     "diff",
     "lint",
     "export_schema",
+    "compile",
+    "BslSpec",
 ]
