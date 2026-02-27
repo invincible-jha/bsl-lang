@@ -52,9 +52,8 @@ import bsl
 
 ## Enterprise Upgrade
 
-The open-source edition provides the core foundation. For production
-deployments requiring SLA-backed support, advanced integrations, and the full
-AgentForge platform, see [docs/UPGRADE_TO_AgentForge.md](docs/UPGRADE_TO_AgentForge.md).
+For production deployments requiring SLA-backed support and advanced
+integrations, contact the maintainers or see the commercial extensions documentation.
 
 ## Contributing
 

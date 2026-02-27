@@ -375,5 +375,71 @@ def parse_command(file: str, output_format: str, output: str | None) -> None:
         console.print(syntax)
 
 
+# ---------------------------------------------------------------------------
+# translate command
+# ---------------------------------------------------------------------------
+
+
+@cli.command(name="translate")
+@click.argument("text")
+@click.option(
+    "--provider",
+    "provider_name",
+    type=click.Choice(["template", "llm"], case_sensitive=False),
+    default="template",
+    help="Translation provider to use (default: template).",
+)
+@click.option(
+    "--reverse",
+    is_flag=True,
+    default=False,
+    help="Translate BSL → natural language instead of NL → BSL.",
+)
+def translate_command(text: str, provider_name: str, reverse: bool) -> None:
+    """Translate natural-language text to BSL directives (or vice versa).
+
+    TEXT is the natural-language description (or BSL directive when
+    --reverse is given) to translate.
+
+    Examples:
+
+    \b
+        bsl-lang translate "must never expose user credentials"
+        bsl-lang translate "FORBID: expose user credentials" --reverse
+        bsl-lang translate "must always validate input" --provider template
+    """
+    from bsl.translate.providers import MockLLMProvider, TemplateProvider
+
+    if provider_name == "template":
+        provider = TemplateProvider()
+    else:
+        # "llm" without a configured LLM: fall back to TemplateProvider
+        # with a visible warning so the user knows what is happening.
+        err_console.print(
+            "[yellow]Warning:[/yellow] No LLM is configured. "
+            "Falling back to template-based translation. "
+            "Set up a TranslationProvider and pass it programmatically "
+            "to use a real LLM.",
+        )
+        provider = TemplateProvider()
+
+    if reverse:
+        from bsl.translate.bsl_to_nl import BSLToNLTranslator
+
+        translator: Any = BSLToNLTranslator(provider=provider)
+    else:
+        from bsl.translate.nl_to_bsl import NLToBSLTranslator
+
+        translator = NLToBSLTranslator(provider=provider)
+
+    try:
+        result = translator.translate(text)
+    except Exception as exc:  # noqa: BLE001
+        err_console.print(f"[red]Translation error:[/red] {exc}")
+        sys.exit(1)
+
+    console.print(result)
+
+
 if __name__ == "__main__":
     cli()
