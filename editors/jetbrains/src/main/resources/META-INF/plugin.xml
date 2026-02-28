@@ -1,0 +1,79 @@
+<idea-plugin>
+    <id>com.aumos.bsl</id>
+    <name>BSL - Behavioral Specification Language</name>
+    <vendor url="https://github.com/aumos-ai">AumOS (invincible-jha)</vendor>
+    <version>0.2.0</version>
+
+    <description><![CDATA[
+        <p>Syntax highlighting and language support for BSL (Behavioral Specification Language) files.</p>
+        <p>BSL is the open-source specification language for describing AI agent behaviors,
+        invariants, and governance constraints in the AumOS platform.</p>
+        <br/>
+        <p><strong>Features:</strong></p>
+        <ul>
+            <li>Syntax highlighting for .bsl files</li>
+            <li>Token-aware color scheme customization</li>
+            <li>Line and block comment support (// and /* ... */)</li>
+            <li>Bracket matching: <code>{ }</code>, <code>[ ]</code>, <code>( )</code></li>
+            <li>Smart indentation</li>
+            <li>Structure view with declaration nodes</li>
+        </ul>
+        <br/>
+        <p>Keywords highlighted:</p>
+        <ul>
+            <li><em>Declarations:</em> agent, behavior, invariant</li>
+            <li><em>Modalities:</em> must, must_not, should, may</li>
+            <li><em>Clauses:</em> when, degrades_to, delegates_to, receives, escalate_to_human, applies_to, all_behaviors, cases, of, in</li>
+            <li><em>Metadata:</em> version, model, owner, confidence, latency, cost, audit, severity</li>
+            <li><em>Operators:</em> and, or, not, before, after, contains</li>
+        </ul>
+        <br/>
+        <p>Install <code>bsl-lang</code> CLI via pip for full validation and linting support.</p>
+    ]]></description>
+
+    <change-notes><![CDATA[
+        <ul>
+            <li>0.2.0 — Initial public release with full token set from BSL grammar</li>
+        </ul>
+    ]]></change-notes>
+
+    <!-- Works in any IntelliJ Platform-based IDE (IDEA, PyCharm, WebStorm, etc.) -->
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+
+        <!-- File type registration -->
+        <fileType
+            name="BSL File"
+            implementationClass="com.aumos.bsl.BslFileType"
+            fieldName="INSTANCE"
+            language="BSL"
+            extensions="bsl"/>
+
+        <!-- Syntax highlighter factory -->
+        <lang.syntaxHighlighterFactory
+            language="BSL"
+            implementationClass="com.aumos.bsl.BslSyntaxHighlighterFactory"/>
+
+        <!-- Color settings page -->
+        <colorSettingsPage
+            implementation="com.aumos.bsl.BslColorSettingsPage"/>
+
+        <!-- Parser definition (registers the language for the platform) -->
+        <lang.parserDefinition
+            language="BSL"
+            implementationClass="com.aumos.bsl.parser.BslParserDefinition"/>
+
+        <!-- Bracket matcher -->
+        <lang.bracketMatcher
+            language="BSL"
+            implementationClass="com.aumos.bsl.BslBracketMatcher"/>
+
+        <!-- Commenter -->
+        <lang.commenter
+            language="BSL"
+            implementationClass="com.aumos.bsl.BslCommenter"/>
+
+    </extensions>
+
+</idea-plugin>
