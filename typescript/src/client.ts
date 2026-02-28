@@ -348,16 +348,3 @@ export function createBslClient(config: BslClientConfig): BslClient {
   };
 }
 
-/** Re-export request/response types for convenience. */
-export type {
-  ValidateRequest,
-  ValidateResponse,
-  FormatRequest,
-  FormatResponse,
-  ParseRequest,
-  ParseResponse,
-  LexRequest,
-  LexResponse,
-  CheckRequest,
-  CheckResponse,
-};
