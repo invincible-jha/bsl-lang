@@ -67,6 +67,11 @@
         "icon": "$(symbol-color)"
       },
       {
+        "command": "bsl.lint",
+        "title": "BSL: Lint File",
+        "icon": "$(search)"
+      },
+      {
         "command": "bsl.showSchema",
         "title": "BSL: Export JSON Schema",
         "icon": "$(json)"
