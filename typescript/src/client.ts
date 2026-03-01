@@ -1,8 +1,12 @@
 /**
  * HTTP client for the BSL validation and formatting API.
  *
- * Uses the Fetch API (available natively in Node 18+, browsers, and Deno).
- * No external dependencies required.
+ * Delegates all HTTP transport to `@aumos/sdk-core` which provides
+ * automatic retry with exponential back-off, timeout management via
+ * `AbortSignal.timeout`, interceptor support, and a typed error hierarchy.
+ *
+ * The public-facing `ApiResult<T>` envelope is preserved for full
+ * backward compatibility with existing callers.
  *
  * @example
  * ```ts
@@ -10,7 +14,6 @@
  *
  * const client = createBslClient({ baseUrl: "http://localhost:8095" });
  *
- * // Validate a BSL source string
  * const result = await client.validate({
  *   source: `agent my-agent {\n  behavior greet {\n    must respond == true\n  }\n}`,
  *   strict: false,
@@ -28,9 +31,17 @@
  * ```
  */
 
+import {
+  createHttpClient,
+  HttpError,
+  NetworkError,
+  TimeoutError,
+  AumosError,
+  type HttpClient,
+} from "@aumos/sdk-core";
+
 import type {
   AgentSpec,
-  ApiError,
   ApiResult,
   Diagnostic,
   Token,
@@ -61,7 +72,6 @@ export interface ValidateRequest {
   /**
    * When true, WARNING-level diagnostics are promoted to ERROR severity,
    * causing validation to fail on warnings.
-   * Mirrors the strict parameter on Python's Validator.
    */
   readonly strict?: boolean;
 }
@@ -109,10 +119,7 @@ export interface ParseResponse {
   readonly success: boolean;
   /** The root AgentSpec AST node, or null if parsing failed. */
   readonly spec: AgentSpec | null;
-  /**
-   * Parse errors encountered. These correspond to ERROR-level diagnostics
-   * produced during parsing (before semantic validation).
-   */
+  /** Parse errors encountered. */
   readonly errors: readonly Diagnostic[];
 }
 
@@ -153,55 +160,51 @@ export interface CheckResponse {
 }
 
 // ---------------------------------------------------------------------------
-// Internal helpers
+// Internal adapter
 // ---------------------------------------------------------------------------
 
-async function fetchJson<T>(
-  url: string,
-  init: RequestInit,
-  timeoutMs: number,
+async function callApi<T>(
+  operation: () => Promise<{ readonly data: T; readonly status: number }>,
 ): Promise<ApiResult<T>> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
   try {
-    const response = await fetch(url, { ...init, signal: controller.signal });
-    clearTimeout(timeoutId);
-
-    const body = (await response.json()) as unknown;
-
-    if (!response.ok) {
-      const errorBody = body as Partial<ApiError>;
+    const response = await operation();
+    return { ok: true, data: response.data };
+  } catch (error: unknown) {
+    if (error instanceof HttpError) {
       return {
         ok: false,
-        error: {
-          error: errorBody.error ?? "Unknown error",
-          detail: errorBody.detail ?? "",
-        },
-        status: response.status,
+        error: { error: error.message, detail: String(error.body ?? "") },
+        status: error.statusCode,
       };
     }
-
-    return { ok: true, data: body as T };
-  } catch (err: unknown) {
-    clearTimeout(timeoutId);
-    const message = err instanceof Error ? err.message : String(err);
+    if (error instanceof TimeoutError) {
+      return {
+        ok: false,
+        error: { error: "Request timed out", detail: error.message },
+        status: 0,
+      };
+    }
+    if (error instanceof NetworkError) {
+      return {
+        ok: false,
+        error: { error: "Network error", detail: error.message },
+        status: 0,
+      };
+    }
+    if (error instanceof AumosError) {
+      return {
+        ok: false,
+        error: { error: error.code, detail: error.message },
+        status: error.statusCode ?? 0,
+      };
+    }
+    const message = error instanceof Error ? error.message : String(error);
     return {
       ok: false,
-      error: { error: "Network error", detail: message },
+      error: { error: "Unexpected error", detail: message },
       status: 0,
     };
   }
-}
-
-function buildHeaders(
-  extraHeaders: Readonly<Record<string, string>> | undefined,
-): Record<string, string> {
-  return {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-    ...extraHeaders,
-  };
 }
 
 // ---------------------------------------------------------------------------
@@ -245,9 +248,6 @@ export interface BslClient {
   /**
    * Parse and validate a BSL source string in a single call.
    *
-   * Combines the parse and validate steps, returning the AST alongside all
-   * diagnostics (parse errors + semantic validation findings) in one request.
-   *
    * @param request - Source text, optional strict flag.
    * @returns CheckResponse with spec, valid flag, and all diagnostics.
    */
@@ -269,82 +269,38 @@ export interface BslClient {
  * Create a typed HTTP client for the BSL API server.
  *
  * @param config - Client configuration including base URL.
- * @returns A BslClient instance backed by the Fetch API.
+ * @returns A BslClient instance.
  */
 export function createBslClient(config: BslClientConfig): BslClient {
-  const { baseUrl, timeoutMs = 30_000, headers: extraHeaders } = config;
-  const baseHeaders = buildHeaders(extraHeaders);
+  const http: HttpClient = createHttpClient({
+    baseUrl: config.baseUrl,
+    timeout: config.timeoutMs ?? 30_000,
+    defaultHeaders: config.headers,
+  });
 
   return {
-    async validate(
-      request: ValidateRequest,
-    ): Promise<ApiResult<ValidateResponse>> {
-      return fetchJson<ValidateResponse>(
-        `${baseUrl}/validate`,
-        {
-          method: "POST",
-          headers: baseHeaders,
-          body: JSON.stringify(request),
-        },
-        timeoutMs,
-      );
+    validate(request: ValidateRequest): Promise<ApiResult<ValidateResponse>> {
+      return callApi(() => http.post<ValidateResponse>("/validate", request));
     },
 
-    async format(request: FormatRequest): Promise<ApiResult<FormatResponse>> {
-      return fetchJson<FormatResponse>(
-        `${baseUrl}/format`,
-        {
-          method: "POST",
-          headers: baseHeaders,
-          body: JSON.stringify(request),
-        },
-        timeoutMs,
-      );
+    format(request: FormatRequest): Promise<ApiResult<FormatResponse>> {
+      return callApi(() => http.post<FormatResponse>("/format", request));
     },
 
-    async parse(request: ParseRequest): Promise<ApiResult<ParseResponse>> {
-      return fetchJson<ParseResponse>(
-        `${baseUrl}/parse`,
-        {
-          method: "POST",
-          headers: baseHeaders,
-          body: JSON.stringify(request),
-        },
-        timeoutMs,
-      );
+    parse(request: ParseRequest): Promise<ApiResult<ParseResponse>> {
+      return callApi(() => http.post<ParseResponse>("/parse", request));
     },
 
-    async lex(request: LexRequest): Promise<ApiResult<LexResponse>> {
-      return fetchJson<LexResponse>(
-        `${baseUrl}/lex`,
-        {
-          method: "POST",
-          headers: baseHeaders,
-          body: JSON.stringify(request),
-        },
-        timeoutMs,
-      );
+    lex(request: LexRequest): Promise<ApiResult<LexResponse>> {
+      return callApi(() => http.post<LexResponse>("/lex", request));
     },
 
-    async check(request: CheckRequest): Promise<ApiResult<CheckResponse>> {
-      return fetchJson<CheckResponse>(
-        `${baseUrl}/check`,
-        {
-          method: "POST",
-          headers: baseHeaders,
-          body: JSON.stringify(request),
-        },
-        timeoutMs,
-      );
+    check(request: CheckRequest): Promise<ApiResult<CheckResponse>> {
+      return callApi(() => http.post<CheckResponse>("/check", request));
     },
 
-    async listRules(): Promise<ApiResult<readonly string[]>> {
-      return fetchJson<readonly string[]>(
-        `${baseUrl}/rules`,
-        { method: "GET", headers: baseHeaders },
-        timeoutMs,
-      );
+    listRules(): Promise<ApiResult<readonly string[]>> {
+      return callApi(() => http.get<readonly string[]>("/rules"));
     },
   };
 }
-

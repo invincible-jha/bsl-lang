@@ -21,6 +21,14 @@ Part of the [AumOS](https://github.com/aumos-ai) open-source agent infrastructur
 - Linter with naming, completeness, and consistency rule sets (extensible via custom rule callables)
 - CLI with `validate`, `fmt`, `lint`, and `diff` subcommands for use in pre-commit hooks and CI pipelines
 
+## Current Limitations
+
+> **Transparency note**: We list known limitations to help you evaluate fit.
+
+- **Runtime**: Parser and validator only. Runtime compiler is not included in open-source.
+- **IDE**: VS Code extension available. Limited IDE support beyond VS Code.
+- **Spec Coverage**: Core BSL syntax — advanced constructs under development.
+
 ## Quick Start
 
 Install from PyPI:
